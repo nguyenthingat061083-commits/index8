@@ -1,0 +1,783 @@
+```html
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Game Mod Menu</title>
+    <style>
+        /* CSS Variables - Cho phép thay đổi màu sắc toàn bộ menu từ Settings */
+        :root {
+            --bg-sidebar: #0b0c10;
+            --bg-content: #101216;
+            --bg-item: #15181f;
+            --border-color: #1e222b;
+            --accent-color: #ff501a; /* Màu cam mặc định trong ảnh */
+            --accent-hover: #e04312;
+            --text-primary: #ffffff;
+            --text-secondary: #8c919e;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #1e1e24;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Khung Menu chính - Tỷ lệ bám sát ảnh */
+        #mod-menu {
+            width: 680px;
+            height: 440px;
+            background-color: var(--bg-content);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            display: flex;
+            position: absolute;
+            overflow: hidden;
+        }
+
+        /* Sidebar bên trái */
+        .sidebar {
+            width: 130px;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            padding-top: 10px;
+            cursor: move; /* Làm khu vực nắm kéo thả menu */
+            border-right: 1px solid var(--border-color);
+        }
+
+        /* Nút chuyển tab trong Sidebar */
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 15px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.15s ease;
+        }
+
+        .tab-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            opacity: 0.7;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        /* Hiệu ứng Active bám sát ảnh: thanh dọc màu cam nằm bên phải sidebar */
+        .tab-btn.active {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active svg {
+            color: var(--accent-color);
+            opacity: 1;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            right: -1px;
+            top: 15%;
+            height: 70%;
+            width: 2.5px;
+            background-color: var(--accent-color);
+            box-shadow: -2px 0 8px var(--accent-color);
+        }
+
+        /* Khu vực nội dung chi tiết bên phải */
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: var(--bg-content);
+        }
+
+        /* Tùy chỉnh thanh cuộn của Content */
+        .content-area::-webkit-scrollbar {
+            width: 5px;
+        }
+        .content-area::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        /* Tab Panels */
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Header của từng Panel giống ảnh */
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 5px;
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .panel-title-divider {
+            color: var(--text-secondary);
+            font-weight: 300;
+            opacity: 0.5;
+        }
+
+        .panel-subtitle {
+            font-size: 11.5px;
+            color: var(--text-secondary);
+        }
+
+        /* Control list */
+        .control-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* Checkbox Custom chuẩn phong cách game */
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-radius: 4px;
+            transition: background 0.1s ease;
+        }
+
+        .checkbox-row:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .checkbox-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        /* Ẩn checkbox gốc */
+        .checkbox-left input[type="checkbox"] {
+            display: none;
+        }
+
+        /* Checkbox box giả */
+        .custom-check {
+            width: 15px;
+            height: 15px;
+            border: 1.5px solid var(--text-secondary);
+            border-radius: 3px;
+            display: inline-block;
+            position: relative;
+            transition: all 0.1s ease;
+        }
+
+        .checkbox-left input[type="checkbox"]:checked + .custom-check {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        /* Dấu tick trắng bên trong */
+        .checkbox-left input[type="checkbox"]:checked + .custom-check::after {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 1px;
+            width: 4px;
+            height: 8px;
+            border: solid #fff;
+            border-width: 0 1.5px 1.5px 0;
+            transform: rotate(45deg);
+        }
+
+        /* Dropdown custom bám sát ảnh */
+        .dropdown-row {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 4px 10px;
+        }
+
+        .dropdown-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .dropdown-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select {
+            width: 100%;
+            background-color: var(--bg-item);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 4px;
+            outline: none;
+            font-size: 12.5px;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .dropdown-select-wrapper::after {
+            content: '▼';
+            font-size: 8px;
+            color: var(--text-secondary);
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .custom-select option {
+            background-color: var(--bg-content);
+            color: var(--text-primary);
+        }
+
+        /* Ô màu preview góc phải (ESP Box, Skeleton, Counter text color...) */
+        .color-previews {
+            display: flex;
+            gap: 5px;
+        }
+
+        .color-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .indicator-red { background-color: #ff3333; }
+        .indicator-green { background-color: #00e676; }
+
+        /* Hộp cảnh báo đỏ tab MISC */
+        .warning-box {
+            font-size: 11.5px;
+            line-height: 1.5;
+            color: #ff4d4d;
+            padding: 5px 10px;
+            margin-bottom: 5px;
+        }
+
+        /* Hộp thông tin text trắng tab SETTINGS */
+        .settings-meta {
+            font-size: 11px;
+            font-family: monospace;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .settings-accent-info {
+            font-size: 11px;
+            color: var(--accent-color);
+            line-height: 1.6;
+        }
+
+        /* Nút bấm lớn màu cam */
+        .action-button {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            text-align: center;
+            width: 100%;
+        }
+
+        .action-button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* Color Picker cho việc đổi màu menu */
+        .picker-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--bg-item);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+
+        .picker-label {
+            font-size: 12.5px;
+            color: var(--text-primary);
+        }
+
+        .picker-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .color-picker-box {
+            appearance: none;
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 18px;
+            border-radius: 2px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .color-picker-box::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-picker-box::-webkit-color-swatch {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="mod-menu">
+    <div class="sidebar" id="sidebar-drag">
+        <button class="tab-btn active" onclick="switchTab(event, 'aimbot-tab')">
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+                <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <span>Aimbot</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab(event, 'visuals-tab')">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+            </svg>
+            <span>Visuals</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab(event, 'misc-tab')">
+            <svg viewBox="0 0 24 24">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0-2-.9-2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+            </svg>
+            <span>Misc</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab(event, 'settings-tab')">
+            <svg viewBox="0 0 24 24">
+                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+            <span>Settings</span>
+        </button>
+    </div>
+
+    <div class="content-area">
+
+        <div id="aimbot-tab" class="tab-panel active">
+            <div class="panel-header">
+                <div class="panel-title">🎯 AIMBOT</div>
+                <div class="panel-title-divider">|</div>
+                <div class="panel-subtitle">Automatically aim at enemies.</div>
+            </div>
+            <div class="control-list">
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox" checked>
+                        <span class="custom-check"></span>
+                        <span>Master switch</span>
+                    </label>
+                </div>
+
+                <div class="dropdown-row">
+                    <span class="dropdown-label">Aiming method</span>
+                    <div class="dropdown-select-wrapper">
+                        <select class="custom-select">
+                            <option>Silent aimbot</option>
+                            <option>Vector aimbot</option>
+                            <option>Memory aim</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox" checked>
+                        <span class="custom-check"></span>
+                        <span>Show FOV circle</span>
+                    </label>
+                </div>
+
+                <div class="dropdown-row">
+                    <span class="dropdown-label">Ignore types</span>
+                    <div class="dropdown-select-wrapper">
+                        <select class="custom-select">
+                            <option>Invisible, Knocked</option>
+                            <option>Only Knocked</option>
+                            <option>None</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dropdown-row">
+                    <span class="dropdown-label">Hitbox</span>
+                    <div class="dropdown-select-wrapper">
+                        <select class="custom-select">
+                            <option>Randomized</option>
+                            <option>Head</option>
+                            <option>Chest</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dropdown-row">
+                    <span class="dropdown-label">Target priority</span>
+                    <div class="dropdown-select-wrapper">
+                        <select class="custom-select">
+                            <option>Closest to crosshair</option>
+                            <option>Lowest HP</option>
+                            <option>Distance</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="visuals-tab" class="tab-panel">
+            <div class="panel-header">
+                <div class="panel-title">👁️ VISUALS</div>
+                <div class="panel-title-divider">|</div>
+                <div class="panel-subtitle">Visual improvements.</div>
+            </div>
+            <div class="control-list">
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox" checked>
+                        <span class="custom-check"></span>
+                        <span>Enemy ESP</span>
+                    </label>
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox" checked>
+                        <span class="custom-check"></span>
+                        <span>Line</span>
+                    </label>
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox">
+                        <span class="custom-check"></span>
+                        <span>Line fire material</span>
+                    </label>
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox" checked>
+                        <span class="custom-check"></span>
+                        <span>Box</span>
+                    </label>
+                    <div class="color-previews">
+                        <div class="color-indicator indicator-red"></div>
+                        <div class="color-indicator indicator-green"></div>
+                    </div>
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox" checked>
+                        <span class="custom-check"></span>
+                        <span>Health</span>
+                    </label>
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox" checked>
+                        <span class="custom-check"></span>
+                        <span>Nickname</span>
+                    </label>
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox" checked>
+                        <span class="custom-check"></span>
+                        <span>Distance</span>
+                    </label>
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox">
+                        <span class="custom-check"></span>
+                        <span>Skeleton</span>
+                    </label>
+                    <div class="color-previews">
+                        <div class="color-indicator indicator-red"></div>
+                        <div class="color-indicator indicator-green"></div>
+                    </div>
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox" checked>
+                        <span class="custom-check"></span>
+                        <span>Nearby enemies count</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div id="misc-tab" class="tab-panel">
+            <div class="panel-header">
+                <div class="panel-title">📦 MISC</div>
+                <div class="panel-title-divider">|</div>
+                <div class="panel-subtitle">Game enhancements.</div>
+            </div>
+            
+            <div class="warning-box">
+                These features are only for fun and may be unsafe.<br>
+                Use them at your own risk!
+            </div>
+
+            <div class="control-list">
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox">
+                        <span class="custom-check"></span>
+                        <span>No fog</span>
+                    </label>
+                </div>
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox">
+                        <span class="custom-check"></span>
+                        <span>No weapon spread</span>
+                    </label>
+                </div>
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox">
+                        <span class="custom-check"></span>
+                        <span>Instant loot</span>
+                    </label>
+                </div>
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox">
+                        <span class="custom-check"></span>
+                        <span>Inverted IceWall rotation</span>
+                    </label>
+                </div>
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox">
+                        <span class="custom-check"></span>
+                        <span>Aspect ratio</span>
+                    </label>
+                </div>
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox">
+                        <span class="custom-check"></span>
+                        <span>Auto-fire</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings-tab" class="tab-panel">
+            <div class="panel-header">
+                <div class="panel-title">⚙️ SETTINGS</div>
+                <div class="panel-title-divider">|</div>
+                <div class="panel-subtitle">Configure options.</div>
+            </div>
+
+            <div class="settings-meta">
+                1.53 (f98165167e9000a6) (12739 | 7ffffffbbbbfffff)<br>
+                (57|6|14|15|10|8|6) | Last Heartbeat Result: 0
+            </div>
+
+            <div class="control-list">
+                <div class="picker-container">
+                    <span class="picker-label">Accent color</span>
+                    <input type="color" id="accentPicker" class="color-picker-box" value="#ff501a" oninput="changeAccentColor(this.value)">
+                </div>
+
+                <div class="picker-container">
+                    <span class="picker-label">Menu Background Color</span>
+                    <input type="color" id="bgPicker" class="color-picker-box" value="#101216" oninput="changeMenuBgColor(this.value)">
+                </div>
+
+                <div class="settings-accent-info">
+                    Subscription time left: 24 days, 3 hours, 16 minutes, 3 seconds<br>
+                    Build at Jan 20 2026 22:05:22 - 1.7.1 for game version 1.120.X
+                </div>
+
+                <div class="checkbox-row">
+                    <label class="checkbox-left">
+                        <input type="checkbox">
+                        <span class="custom-check"></span>
+                        <span>Streamproof</span>
+                    </label>
+                </div>
+
+                <div class="dropdown-row">
+                    <span class="dropdown-label">Language</span>
+                    <div class="dropdown-select-wrapper">
+                        <select class="custom-select">
+                            <option>English</option>
+                            <option>Tiếng Việt</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="action-button">Enable silent mode</button>
+                <button class="action-button">Save settings</button>
+                <button class="action-button">Load settings</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Hàm chuyển đổi Tab mượt mà giữa các chức năng
+    function switchTab(evt, tabId) {
+        // Tắt tất cả panel cũ
+        const panels = document.querySelectorAll('.tab-panel');
+        panels.forEach(panel => panel.classList.remove('active'));
+
+        // Gỡ trạng thái active của tất cả các nút
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+
+        // Kích hoạt panel và nút được chọn
+        document.getElementById(tabId).classList.add('active');
+        evt.currentTarget.classList.add('active');
+    }
+
+    // Đổi Màu Accent (Các thành phần highlight, checkbox, line phân tách, text cam)
+    function changeAccentColor(color) {
+        document.documentElement.style.setProperty('--accent-color', color);
+        
+        // Tự động tính toán sắc độ tối hơn cho hover hiệu ứng nút bấm
+        let r = parseInt(color.slice(1, 3), 16);
+        let g = parseInt(color.slice(3, 5), 16);
+        let b = parseInt(color.slice(5, 7), 16);
+        r = Math.max(0, Math.floor(r * 0.85)).toString(16).padStart(2, '0');
+        g = Math.max(0, Math.floor(g * 0.85)).toString(16).padStart(2, '0');
+        b = Math.max(0, Math.floor(b * 0.85)).toString(16).padStart(2, '0');
+        document.documentElement.style.setProperty('--accent-hover', `#${r}${g}${b}`);
+    }
+
+    // Đổi Màu Nền (Màu chủ đạo chính của Menu Panel và thanh Sidebar)
+    function changeMenuBgColor(color) {
+        document.documentElement.style.setProperty('--bg-content', color);
+        
+        // Tự động tính toán để Sidebar có màu sẫm hơn màu nền Content chính 25% giúp phân định rõ ràng
+        let r = parseInt(color.slice(1, 3), 16);
+        let g = parseInt(color.slice(3, 5), 16);
+        let b = parseInt(color.slice(5, 7), 16);
+        
+        let sideR = Math.max(0, Math.floor(r * 0.70)).toString(16).padStart(2, '0');
+        let sideG = Math.max(0, Math.floor(g * 0.70)).toString(16).padStart(2, '0');
+        let sideB = Math.max(0, Math.floor(b * 0.70)).toString(16).padStart(2, '0');
+        
+        let itemR = Math.min(255, Math.floor(r * 1.30)).toString(16).padStart(2, '0');
+        let itemG = Math.min(255, Math.floor(g * 1.30)).toString(16).padStart(2, '0');
+        let itemB = Math.min(255, Math.floor(b * 1.30)).toString(16).padStart(2, '0');
+
+        document.documentElement.style.setProperty('--bg-sidebar', `#${sideR}${sideG}${sideB}`);
+        document.documentElement.style.setProperty('--bg-item', `#${itemR}${itemG}${itemB}`);
+    }
+
+    // Logic Kéo Thả Menu chuyên nghiệp (Cầm giữ Sidebar để kéo)
+    const menu = document.getElementById("mod-menu");
+    const dragHandle = document.getElementById("sidebar-drag");
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    // Căn giữa menu lần đầu tiên tải trang
+    menu.style.left = (window.innerWidth - 680) / 2 + "px";
+    menu.style.top = (window.innerHeight - 440) / 2 + "px";
+
+    dragHandle.addEventListener("mousedown", (e) => {
+        // Chỉ cho phép kéo khi không bấm trúng nút chuyển tab
+        if (e.target.closest('.tab-btn')) return;
+        
+        isDragging = true;
+        offsetX = e.clientX - menu.offsetLeft;
+        offsetY = e.clientY - menu.offsetTop;
+        document.addEventListener("mousemove", dragMove);
+        document.addEventListener("mouseup", dragStop);
+    });
+
+    function dragMove(e) {
+        if (!isDragging) return;
+        menu.style.left = (e.clientX - offsetX) + "px";
+        menu.style.top = (e.clientY - offsetY) + "px";
+    }
+
+    function dragStop() {
+        isDragging = false;
+        document.removeEventListener("mousemove", dragMove);
+        document.removeEventListener("mouseup", dragStop);
+    }
+</script>
+
+</body>
+</html>
+
+```
